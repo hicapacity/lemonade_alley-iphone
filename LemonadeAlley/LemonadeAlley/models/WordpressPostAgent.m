@@ -6,9 +6,9 @@
 //  Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 //
 
-#import "WordpressAgent.h"
+#import "WordpressPostAgent.h"
 
-@implementation WordpressAgent
+@implementation WordpressPostAgent
 
 @synthesize responseData;
 @synthesize response;
@@ -18,7 +18,7 @@
   self = [super init];
   if (self != nil) {
     // Create the request.
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://lemonadealley.com/blog?json=1"]
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://lemonadealley.com/api/get_recent_posts/"]
                                              cachePolicy:NSURLRequestUseProtocolCachePolicy
                                          timeoutInterval:60.0];
     NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
