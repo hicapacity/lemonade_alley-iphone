@@ -1,9 +1,8 @@
-#import "NewsViewController.h"
-#import "WordpressPostAgent.h"
-#import "PostViewController.h"
+#import "AboutViewController.h"
+#import "PageViewController.h"
 
-@implementation NewsViewController
-@synthesize wordpressPostAgent;
+@implementation AboutViewController
+@synthesize wordpressPageAgent;
 @synthesize HUD;
 
 - (id)initWithStyle:(UITableViewStyle)style {
@@ -26,14 +25,8 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
   self.tableView.backgroundView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"lemon_200x200.png"]];
-  self.parentViewController.title  = @"News";
-  wordpressPostAgent = [[WordpressPostAgent alloc] init];
-  HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
-  HUD.labelText = @"Loading";
-  HUD.userInteractionEnabled = NO;
-  [self.navigationController.view addSubview:HUD];
-  [HUD show:YES];
-  
+  wordpressPageAgent = [[WordpressPageAgent alloc] init];
+  self.parentViewController.title  = @"About";
   // Uncomment the following line to preserve selection between presentations.
   // self.clearsSelectionOnViewWillAppear = NO;
   
@@ -41,7 +34,8 @@
   // self.navigationItem.rightBarButtonItem = self.editButtonItem;
 }
 
-- (void)viewDidUnload {
+- (void)viewDidUnload
+{
   [super viewDidUnload];
   // Release any retained subviews of the main view.
   // e.g. self.myOutlet = nil;
@@ -50,7 +44,7 @@
 - (void)viewWillAppear:(BOOL)animated {
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(receiveDataNotification:) 
-                                               name:@"NewsUpdateNotification"
+                                               name:@"PagesUpdateNotification"
                                              object:nil];
   [super viewWillAppear:animated];
 }
@@ -83,7 +77,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-  return [[wordpressPostAgent posts] count];
+  return [[wordpressPageAgent pages] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -93,20 +87,27 @@
   if (cell == nil) {
     cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier];
   }
-  //  cell.backgroundColor = [UIColor clearColor];
-  //  cell.textLabel.font = [UIFont fontWithName:@"Georgia-Bold" size:16.0];
-  //  cell.textLabel.textColor = [UIColor whiteColor];
+  NSUInteger row = [indexPath row];
+  NSDictionary *page = [[wordpressPageAgent pages] objectAtIndex:row];
   
+  NSLog(@"Page: %@", page);
+  // Configure the cell...
   cell.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.8];
   cell.textLabel.font = [UIFont fontWithName:@"Helvetica-Bold" size:14.0];
-  
-  NSUInteger row = [indexPath row];
-  NSDictionary *post = [[wordpressPostAgent posts] objectAtIndex:row];
-  
-  // Configure the cell...
-  cell.textLabel.text = [post objectForKey:@"title"];
-  cell.detailTextLabel.text = [post objectForKey:@"modified"];
+//  cell.textLabel.textColor = [UIColor whiteColor];
+  cell.textLabel.text = [page objectForKey:@"name"];
+//  cell.detailTextLabel.font = [UIFont fontWithName:@"Noteworthy-Light" size:14.0];
+  cell.detailTextLabel.text = [page objectForKey:@"url"];
   return cell;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+  if (section == 0) {
+    return @"Information";
+  }
+  else {
+    return @"";
+  }
 }
 
 /*
@@ -150,28 +151,18 @@
 
 #pragma mark - Table view delegate
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
   // Navigation logic may go here. Create and push another view controller.
   /*
-   <#DetailViewController#> *detailViewController = [[<#DetailViewController#> alloc] initWithNibName:@"<#Nib name#>" bundle:nil];
+   DetailViewController *detailViewController = [[DetailViewController alloc] initWithNibName:@"Nib name" bundle:nil];
    // ...
    // Pass the selected object to the new view controller.
    [self.navigationController pushViewController:detailViewController animated:YES];
    */
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-  if (section == 0) {
-    return @"Blog";
-  }
-  else {
-    return @"";
-  }
-}
-
 - (void) receiveDataNotification:(NSNotification *) notification {
-  if ([[notification name] isEqualToString:@"NewsUpdateNotification"]) {
+  if ([[notification name] isEqualToString:@"PagesUpdateNotification"]) {
     NSLog (@"Successfully received the Data Update notification!");
     [[self tableView] reloadData];
     [HUD hide:YES];
@@ -179,19 +170,18 @@
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-  NSLog(@"prepareForSegue");
-  NSLog(@"%@", segue.identifier);
+  NSLog(@"Segue identifier: %@", segue.identifier);
   
-  if ([[segue identifier] isEqualToString:@"showDetail"]) {
+  if ([[segue identifier] isEqualToString:@"showPage"]) {
     NSLog(@"ShowDetails from prepareforsegue");
     NSInteger row = [[self.tableView indexPathForSelectedRow] row];
-    NSDictionary *post = [wordpressPostAgent.posts objectAtIndex:row];
+    NSDictionary *page = [wordpressPageAgent.pages objectAtIndex:row];
     
     // [segue destinationViewController] is read-only, so in order to
     // write to that view controller you'll have to locally instantiate
     // it here:
-    PostViewController *detailViewController = [segue destinationViewController];
-    detailViewController.post = post;
+    PageViewController *detailViewController = [segue destinationViewController];
+    detailViewController.page = page;
     
     // You now have a solid reference to the upcoming / destination view
     // controller. Example use: Allocate and initialize some property of
@@ -204,5 +194,6 @@
     //upcomingViewController.initialViewController = self;
   }
 }
+
 
 @end
