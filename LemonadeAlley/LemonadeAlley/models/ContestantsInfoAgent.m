@@ -1,24 +1,23 @@
-//
-//  WPPost.m
-//  LemonadeAlley
-//
-//  Created by Jian Shi Wang on 10/16/11.
-//  Copyright (c) 2011 __MyCompanyName__. All rights reserved.
-//
+#import "ContestantsInfoAgent.h"
 
-#import "WordpressPostAgent.h"
-
-@implementation WordpressPostAgent
-
+@implementation ContestantsInfoAgent
 @synthesize responseData;
 @synthesize response;
-@synthesize posts;
+@synthesize contestantsInfos;
+@synthesize contestants10;
+@synthesize contestants7;
+@synthesize contestants3;
+@synthesize contestantsK;
 
 - (id) init {
   self = [super init];
   if (self != nil) {
+    contestants10 = [[NSMutableArray alloc] init];
+    contestants7 = [[NSMutableArray alloc] init];
+    contestants3 = [[NSMutableArray alloc] init];
+    contestantsK = [[NSMutableArray alloc] init];
     // Create the request.
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://lemonadealley.com/api/get_recent_posts/"]
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://wangb.us/la/contestants_info.json"]
                                              cachePolicy:NSURLRequestReloadIgnoringCacheData
                                          timeoutInterval:60.0];
     NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
@@ -50,18 +49,28 @@
   //  NSString *res = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
   NSError *error = nil;
   response = [NSJSONSerialization JSONObjectWithData:responseData options:NSJSONReadingMutableContainers error:&error]; 
-  //  NSLog(@"Finished loading: %@", response);
-  
-  // sethostname (array of dictionaries)
-  posts = [response objectForKey:@"posts"];
+  NSLog(@"Finished loading: %@", response);
+  contestantsInfos = [response objectForKey:@"contestants"];
   
   // dictionary (array element)
-  //  for (NSDictionary *post in posts) {
-  //    NSString *content = [post objectForKey:@"content"];
-  //    NSLog(@"%@", content);
-  //  }
-  
-  [[NSNotificationCenter defaultCenter] postNotificationName:@"NewsUpdateNotification" object:self];
+  for (NSDictionary *info in contestantsInfos) {
+    
+    NSString *division = [info objectForKey:@"grade division"];
+    if ([division isEqualToString:@"10"]) {
+      [contestants10 addObject:info];
+    }
+    else if ([division isEqualToString:@"7"]) {
+      [contestants7 addObject:info];
+    }
+    else if ([division isEqualToString:@"3"]) {
+      [contestants3 addObject:info];
+    }
+    else if ([division isEqualToString:@"k"]) {
+      [contestantsK addObject:info];
+    }
+  }
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"ContestantInfoUpdateNotification" object:self];
 }
+
 
 @end

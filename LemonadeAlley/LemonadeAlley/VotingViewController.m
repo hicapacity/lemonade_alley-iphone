@@ -1,19 +1,14 @@
-#define FONT_SIZE 14.0f
-#define CELL_CONTENT_WIDTH 320.0f
-#define CELL_CONTENT_MARGIN 10.0f
+#import "VotingViewController.h"
 
-#import "NewsViewController.h"
-#import "WordpressPostAgent.h"
-#import "PostViewController.h"
 
-@implementation NewsViewController
-@synthesize wordpressPostAgent;
+@implementation VotingViewController
 @synthesize HUD;
+@synthesize contestantsInfoAgent;
+@synthesize arrayOfSections;
 
 - (id)initWithStyle:(UITableViewStyle)style {
   self = [super initWithStyle:style];
   if (self) {
-    // Custom initialization
   }
   return self;
 }
@@ -29,8 +24,18 @@
 
 - (void)viewDidLoad {
   [super viewDidLoad];
+  arrayOfSections = [[NSMutableArray alloc] init];
+  [arrayOfSections addObject:[NSString stringWithFormat:@"Grades 10-12"]];
+  [arrayOfSections addObject:[NSString stringWithFormat:@"Grades 7-9"]];
+  [arrayOfSections addObject:[NSString stringWithFormat:@"Grades 3-6"]];
+  [arrayOfSections addObject:[NSString stringWithFormat:@"Grades K-2"]];
   self.tableView.backgroundView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"lemon_200x200.png"]];
-  wordpressPostAgent = [[WordpressPostAgent alloc] init];
+  contestantsInfoAgent = [[ContestantsInfoAgent alloc] init];
+  // Uncomment the following line to preserve selection between presentations.
+  // self.clearsSelectionOnViewWillAppear = NO;
+  
+  // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
+  // self.navigationItem.rightBarButtonItem = self.editButtonItem;
   HUD = [[MBProgressHUD alloc] initWithView:self.navigationController.view];
   HUD.labelText = @"Loading";
   //  HUD.userInteractionEnabled = NO;
@@ -38,14 +43,17 @@
   [HUD show:YES];
 }
 
-- (void)viewDidUnload {
+- (void)viewDidUnload
+{
   [super viewDidUnload];
+  // Release any retained subviews of the main view.
+  // e.g. self.myOutlet = nil;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(receiveDataNotification:) 
-                                               name:@"NewsUpdateNotification"
+                                               name:@"ContestantInfoUpdateNotification"
                                              object:nil];
   [super viewWillAppear:animated];
 }
@@ -54,18 +62,15 @@
   [super viewDidAppear:animated];
 }
 
-- (void)viewWillDisappear:(BOOL)animated
-{
+- (void)viewWillDisappear:(BOOL)animated {
   [super viewWillDisappear:animated];
 }
 
-- (void)viewDidDisappear:(BOOL)animated
-{
+- (void)viewDidDisappear:(BOOL)animated {
   [super viewDidDisappear:animated];
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
   // Return YES for supported orientations
   return (interfaceOrientation == UIInterfaceOrientationPortrait);
 }
@@ -73,11 +78,26 @@
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-  return 1;
+  return [arrayOfSections count];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-  return [[wordpressPostAgent posts] count];
+  
+  if (section == 0) {
+    return [[contestantsInfoAgent contestants10] count];
+  }
+  else if (section == 1) {
+    return [[contestantsInfoAgent contestants7] count];
+  }
+  else if (section == 2) {
+    return [[contestantsInfoAgent contestants3] count];
+  }
+  else if (section == 3) {
+    return [[contestantsInfoAgent contestantsK] count];
+  }
+  else {
+    return 0;
+  }
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -87,49 +107,37 @@
   if (cell == nil) {
     cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier];
   }
-  //  cell.backgroundColor = [UIColor clearColor];
-  //  cell.textLabel.font = [UIFont fontWithName:@"Georgia-Bold" size:16.0];
-  //  cell.textLabel.textColor = [UIColor whiteColor];
+  NSUInteger row = [indexPath row];
+  NSDictionary *contestantsInfo = nil;
   
+  if (indexPath.section == 0) {
+   contestantsInfo = [[contestantsInfoAgent contestants10] objectAtIndex:row];
+  }
+  else if (indexPath.section == 1) {
+    contestantsInfo = [[contestantsInfoAgent contestants7] objectAtIndex:row];
+  }
+  else if (indexPath.section == 2) {
+    contestantsInfo = [[contestantsInfoAgent contestants3] objectAtIndex:row];
+  }
+  else if (indexPath.section == 3) {
+    contestantsInfo = [[contestantsInfoAgent contestantsK] objectAtIndex:row];
+  }
+  
+
+  NSLog(@"Page: %@", contestantsInfo);
+  // Configure the cell...
   cell.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.8];
   cell.textLabel.font = [UIFont fontWithName:@"Helvetica-Bold" size:14.0];
-  
-  NSUInteger row = [indexPath row];
-  NSDictionary *post = [[wordpressPostAgent posts] objectAtIndex:row];
-  
-  // Configure the cell...
-  cell.textLabel.text = [post objectForKey:@"title"];
-  
-  cell.textLabel.lineBreakMode = UILineBreakModeWordWrap;
-  cell.textLabel.numberOfLines = 0;
+  //  cell.textLabel.textColor = [UIColor whiteColor];
+  cell.textLabel.text = [contestantsInfo objectForKey:@"team name"];
   cell.textLabel.backgroundColor = [UIColor clearColor];
-//  cell.detailTextLabel.text = 
-  
-  NSString *modified = [post objectForKey:@"modified"];
-  NSDateFormatter *dateFormatterFromWordpress = [[NSDateFormatter alloc] init];
-  [dateFormatterFromWordpress setDateFormat:@"yyyy-MM-dd HH:mm:ss"];    
-  NSDate *date = [dateFormatterFromWordpress dateFromString:modified];
-  
-  NSLocale *locale = [NSLocale currentLocale];
-  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init]; 
-  NSString *dateFormat = [NSDateFormatter dateFormatFromTemplate:@"E MMM d yyyy HH:mm" options:0 locale:locale];
-  [dateFormatter setDateFormat:dateFormat];
-  [dateFormatter setLocale:locale];
-  
-  NSString *modifiedFormatted = [dateFormatter stringFromDate: date];
-  cell.detailTextLabel.text = [NSString stringWithFormat:@"Posted: %@", modifiedFormatted];
-  
-  cell.detailTextLabel.backgroundColor = [UIColor clearColor];
+  //  cell.detailTextLabel.font = [UIFont fontWithName:@"Noteworthy-Light" size:14.0];
+//  cell.detailTextLabel.text = [NSString stringWithFormat:@"Grade: %@", [contestantsInfo objectForKey:@"grade division"]];
   return cell;
 }
 
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-  NSDictionary *post = [[wordpressPostAgent posts] objectAtIndex:[indexPath row]];
-  NSString *text = [post objectForKey:@"title"];
-  CGSize constraint = CGSizeMake(CELL_CONTENT_WIDTH - (CELL_CONTENT_MARGIN * 2), 20000.0f);
-  CGSize size = [text sizeWithFont:[UIFont systemFontOfSize:FONT_SIZE] constrainedToSize:constraint lineBreakMode:UILineBreakModeWordWrap];
-  CGFloat height = MAX(size.height, 44.0f);
-  return height + (CELL_CONTENT_MARGIN * 2);
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+  return [[self arrayOfSections] objectAtIndex:section];
 }
 
 /*
@@ -173,48 +181,37 @@
 
 #pragma mark - Table view delegate
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
   // Navigation logic may go here. Create and push another view controller.
   /*
-   <#DetailViewController#> *detailViewController = [[<#DetailViewController#> alloc] initWithNibName:@"<#Nib name#>" bundle:nil];
+   DetailViewController *detailViewController = [[DetailViewController alloc] initWithNibName:@"Nib name" bundle:nil];
    // ...
    // Pass the selected object to the new view controller.
    [self.navigationController pushViewController:detailViewController animated:YES];
    */
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-  if (section == 0) {
-    return @"Blog";
-  }
-  else {
-    return @"";
-  }
-}
-
 - (void) receiveDataNotification:(NSNotification *) notification {
-  if ([[notification name] isEqualToString:@"NewsUpdateNotification"]) {
-    NSLog (@"Successfully received the Data Update notification!");
+  if ([[notification name] isEqualToString:@"ContestantInfoUpdateNotification"]) {
+    NSLog (@"Successfully received the ContestantInfoUpdateNotification!");
     [[self tableView] reloadData];
     [HUD hide:YES];
   }
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-  NSLog(@"prepareForSegue");
-  NSLog(@"%@", segue.identifier);
+  NSLog(@"Segue identifier: %@", segue.identifier);
   
-  if ([[segue identifier] isEqualToString:@"showDetail"]) {
-    NSLog(@"ShowDetails from prepareforsegue");
+  if ([[segue identifier] isEqualToString:@"showContestantInfo"]) {
+    NSLog(@"ShowDetails from prepareforsegue (Voting)");
     NSInteger row = [[self.tableView indexPathForSelectedRow] row];
-    NSDictionary *post = [wordpressPostAgent.posts objectAtIndex:row];
+    NSDictionary *contestantInfo = [contestantsInfoAgent.contestantsInfos objectAtIndex:row];
     
     // [segue destinationViewController] is read-only, so in order to
     // write to that view controller you'll have to locally instantiate
     // it here:
-    PostViewController *detailViewController = [segue destinationViewController];
-    detailViewController.post = post;
+    FacebookViewController *facebookViewController = [segue destinationViewController];
+    facebookViewController.contestantInfo = contestantInfo;
     
     // You now have a solid reference to the upcoming / destination view
     // controller. Example use: Allocate and initialize some property of
@@ -227,5 +224,4 @@
     //upcomingViewController.initialViewController = self;
   }
 }
-
 @end
